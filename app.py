@@ -1,5 +1,6 @@
 # app.py
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,15 +22,30 @@ app = FastAPI(
 
 
 # ============================================================
-# CORS
+# CORS (Configured for Vercel Frontend & Local Development)
 # ============================================================
+
+allowed_origins = [
+    "https://land-ac.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8000",
+]
+
+env_frontend = os.environ.get("FRONTEND_URL")
+if env_frontend and env_frontend not in allowed_origins:
+    allowed_origins.append(env_frontend)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 
@@ -37,36 +53,30 @@ app.add_middleware(
 # ROUTERS
 # ============================================================
 
-app.include_router(
-    prediction_router
-)
-
-app.include_router(
-    projects_router
-)
-
-app.include_router(
-    stage_risk_router
-)
-
-app.include_router(
-    explanation_router
-)
-
-app.include_router(
-    recommendations_router
-)
+app.include_router(prediction_router)
+app.include_router(projects_router)
+app.include_router(stage_risk_router)
+app.include_router(explanation_router)
+app.include_router(recommendations_router)
 
 
 # ============================================================
-# ROOT
+# ROOT & HEALTH CHECK (For Render Service Monitoring)
 # ============================================================
 
 @app.get("/")
 def root():
-
     return {
         "project": "SIH 26017",
         "system": "Land Acquisition Early Warning System",
-        "status": "online"
+        "status": "online",
+        "frontend": "https://land-ac.vercel.app"
+    }
+
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "uptime": "ok"
     }
